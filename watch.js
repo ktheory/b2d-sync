@@ -31,7 +31,7 @@ function install_rsync (cb) {
 function rsync (cb) {
   var child = cp.spawn('rsync', [
     '-av',
-    '--rsh=ssh -i ' + osenv.home() + '/.ssh/id_boot2docker -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no',
+    '--rsh=ssh -i ' + osenv.home() + '/.ssh/id_boot2docker -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o ConnectTimeout=1',
     '--delete',
      process.cwd() + '/',
      '--exclude-from',
@@ -45,8 +45,13 @@ function rsync (cb) {
   child.stdout.on('data', function (data) {
     console.log(data.toString());
   });
-  child.on('exit', function () {
-    cb();
+  child.on('exit', function (code) {
+    if (code !== 0) {
+      console.log("rsync failed with code "+code+". Shutting down.");
+      process.exit(1);
+    } else {
+      cb();
+    }
   });
 }
 
